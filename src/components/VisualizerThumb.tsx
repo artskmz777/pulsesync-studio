@@ -196,7 +196,14 @@ export const VisualizerThumb: React.FC<VisualizerThumbProps> = ({ styleId, color
   return (
     <svg viewBox="0 0 68 40" className="w-full h-10 rounded-md bg-[#0B0E16]">
       <defs>
-        <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
+        <linearGradient
+          id={gradId}
+          gradientUnits="userSpaceOnUse"
+          x1="4"
+          y1="0"
+          x2="64"
+          y2="0"
+        >
           <stop offset="0%" stopColor={colors[0]} />
           <stop offset="50%" stopColor={colors[1]} />
           <stop offset="100%" stopColor={colors[2]} />
