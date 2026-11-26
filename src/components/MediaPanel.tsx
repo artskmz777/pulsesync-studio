@@ -12,6 +12,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { SliderControl, SwitchControl } from './StudioControls';
+import { formatSimplifiedRatio } from '../constants/presets';
 import type {
   AnalysisSummary,
   AudioSourceMode,
@@ -201,7 +202,8 @@ export const MediaPanel: React.FC<MediaPanelProps> = ({
                     {media.backgroundFileName}
                   </div>
                   <div className="text-[11px] text-slate-400 mt-0.5 font-mono">
-                    {media.backgroundWidth}×{media.backgroundHeight}
+                    {media.backgroundWidth}×{media.backgroundHeight} (
+                    {formatSimplifiedRatio(media.backgroundWidth, media.backgroundHeight)})
                     {media.backgroundType === 'video' &&
                       ` • ${formatDurationTh(media.backgroundDuration)}`}
                   </div>
@@ -211,8 +213,8 @@ export const MediaPanel: React.FC<MediaPanelProps> = ({
             )}
           </div>
 
-          {/* Image Options: Cover/Contain + Bleed Margin */}
-          {media.backgroundType === 'image' && (
+          {/* Framing Options (Image & Video): Cover/Contain + Bleed Margin */}
+          {(media.backgroundType === 'image' || media.backgroundType === 'video') && (
             <div className="rounded-xl bg-[#141926] border border-slate-800/80 p-3 space-y-3">
               <div className="grid grid-cols-2 gap-1.5">
                 {(['cover', 'contain'] as const).map((fit) => (
@@ -231,12 +233,12 @@ export const MediaPanel: React.FC<MediaPanelProps> = ({
                 ))}
               </div>
               <SliderControl
-                label="เผื่อขอบกันภาพขาด (Bleed)"
+                label="เผื่อขอบเพิ่ม (Extra Bleed)"
                 value={media.bleedPercent}
-                min={10}
-                max={18}
+                min={0}
+                max={15}
                 unit="%"
-                hint="เผื่อขอบ 10–15% เพื่อไม่ให้เห็นขอบดำเวลาภาพกระตุกตามเบส"
+                hint="0% = แสดงขอบภาพครบ (ระบบเผื่อระยะสั่นเบสให้อัตโนมัติ)"
                 onChange={onChangeBleed}
               />
             </div>

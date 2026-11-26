@@ -47,7 +47,7 @@ const INITIAL_MEDIA: MediaSourceState = {
   backgroundHeight: 0,
   backgroundDuration: 0,
   imageFit: 'cover',
-  bleedPercent: 12,
+  bleedPercent: 0,
   loopVideo: true,
   videoHasAudio: false,
   audioSourceMode: 'video',
@@ -155,17 +155,29 @@ export function App(): React.ReactElement {
     }));
   }, [computedAnalysis]);
 
+  const sourceSize = useMemo(
+    () =>
+      media.backgroundWidth > 0 && media.backgroundHeight > 0
+        ? { width: media.backgroundWidth, height: media.backgroundHeight }
+        : null,
+    [media.backgroundWidth, media.backgroundHeight],
+  );
+
   // Check WebCodecs support whenever target dimensions/fps change
   useEffect(() => {
     let active = true;
-    const { width, height } = getOutputDimensions(aspectRatio, exportSettings.resolution);
+    const { width, height } = getOutputDimensions(
+      aspectRatio,
+      exportSettings.resolution,
+      sourceSize,
+    );
     void checkWebCodecsCapability(width, height, exportSettings.fps).then((res) => {
       if (active) setCapability(res);
     });
     return () => {
       active = false;
     };
-  }, [aspectRatio, exportSettings.resolution, exportSettings.fps]);
+  }, [aspectRatio, exportSettings.resolution, exportSettings.fps, sourceSize]);
 
   // Spawn DSP Web Worker once on mount
   useEffect(() => {
@@ -268,7 +280,7 @@ export function App(): React.ReactElement {
       if (!canvas) return;
 
       // Preview canvas runs at clean 720p-equivalent proportion for crisp 60fps interaction
-      const { width: outW, height: outH } = getOutputDimensions(aspectRatio, '720p');
+      const { width: outW, height: outH } = getOutputDimensions(aspectRatio, '720p', sourceSize);
       if (canvas.width !== outW || canvas.height !== outH) {
         canvas.width = outW;
         canvas.height = outH;
@@ -342,6 +354,7 @@ export function App(): React.ReactElement {
       media.backgroundHeight,
       media.imageFit,
       media.bleedPercent,
+      sourceSize,
       exportSettings.fps,
       computedAnalysis,
       bassSettings,
@@ -445,6 +458,7 @@ export function App(): React.ReactElement {
         const img = new Image();
         img.onload = () => {
           imageElementRef.current = img;
+          setAspectRatio('source');
           setMedia((prev) => ({
             ...prev,
             backgroundType: 'image',
@@ -505,6 +519,7 @@ export function App(): React.ReactElement {
               ? 'video'
               : 'custom';
 
+        setAspectRatio('source');
         setMedia((prev) => ({
           ...prev,
           backgroundType: 'video',
@@ -952,6 +967,7 @@ export function App(): React.ReactElement {
 
       <HeaderBar
         aspectRatio={aspectRatio}
+        sourceSize={sourceSize}
         onChangeAspectRatio={setAspectRatio}
         canExport={canExport}
         isExporting={isExporting}
@@ -989,6 +1005,7 @@ export function App(): React.ReactElement {
         <PreviewStage
           canvasRef={previewCanvasRef}
           aspectRatio={aspectRatio}
+          sourceSize={sourceSize}
           exportSettings={exportSettings}
           visualizer={visualizerSettings}
           gradient={gradientSettings}
@@ -1011,6 +1028,7 @@ export function App(): React.ReactElement {
           activeTab={activeTab}
           onChangeTab={setActiveTab}
           aspectRatio={aspectRatio}
+          sourceSize={sourceSize}
           bass={bassSettings}
           onChangeBass={setBassSettings}
           visualizer={visualizerSettings}

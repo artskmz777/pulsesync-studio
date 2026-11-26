@@ -18,6 +18,7 @@ interface InspectorPanelProps {
   activeTab: InspectorTabId;
   onChangeTab: (tab: InspectorTabId) => void;
   aspectRatio: AspectRatioId;
+  sourceSize: { width: number; height: number } | null;
   bass: BassSettings;
   onChangeBass: (next: BassSettings) => void;
   visualizer: VisualizerSettings;
@@ -44,6 +45,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   activeTab,
   onChangeTab,
   aspectRatio,
+  sourceSize,
   bass,
   onChangeBass,
   visualizer,
@@ -102,6 +104,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         {activeTab === 'export' && (
           <ExportTab
             aspectRatio={aspectRatio}
+            sourceSize={sourceSize}
             settings={exportSettings}
             duration={duration}
             canExport={canExport}

@@ -5,15 +5,17 @@ import {
   Monitor,
   RectangleHorizontal,
   RectangleVertical,
+  Scan,
   ShieldCheck,
   Smartphone,
   Square,
 } from 'lucide-react';
-import { ASPECT_RATIO_OPTIONS } from '../constants/presets';
+import { ASPECT_RATIO_OPTIONS, formatSimplifiedRatio } from '../constants/presets';
 import type { AspectRatioId, WebCodecsCapability } from '../types/studio';
 
 interface HeaderBarProps {
   aspectRatio: AspectRatioId;
+  sourceSize: { width: number; height: number } | null;
   onChangeAspectRatio: (ratio: AspectRatioId) => void;
   canExport: boolean;
   isExporting: boolean;
@@ -23,14 +25,22 @@ interface HeaderBarProps {
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
   aspectRatio,
+  sourceSize,
   onChangeAspectRatio,
   canExport,
   isExporting,
   capability,
   onOpenExport,
 }) => {
+  const hasSource = Boolean(sourceSize && sourceSize.width > 0 && sourceSize.height > 0);
+  const sourceRatioText = hasSource
+    ? formatSimplifiedRatio(sourceSize!.width, sourceSize!.height)
+    : null;
+
   const getRatioIcon = (id: AspectRatioId) => {
     switch (id) {
+      case 'source':
+        return <Scan className="w-3.5 h-3.5 shrink-0" />;
       case '16:9':
         return <Monitor className="w-3.5 h-3.5 shrink-0" />;
       case '3:2':
@@ -70,40 +80,50 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         </div>
       </div>
 
-      {/* Aspect Ratio Selector (6 ratios: 16:9, 3:2, 1:1, 4:5, 2:3, 9:16) */}
-      <div className="hidden md:flex items-center gap-0.5 bg-[#0B0D12] border border-slate-800 rounded-xl p-1 shrink-0">
+      {/* Aspect Ratio Selector (Source + 6 ratios: 16:9, 3:2, 1:1, 4:5, 2:3, 9:16) */}
+      <div className="hidden lg:flex items-center gap-0.5 bg-[#0B0D12] border border-slate-800 rounded-xl p-1 shrink-0">
         {ASPECT_RATIO_OPTIONS.map((opt) => {
           const active = opt.id === aspectRatio;
+          const isSourceOpt = opt.id === 'source';
+          const pillText =
+            isSourceOpt && sourceRatioText ? `ตามไฟล์ ${sourceRatioText}` : opt.shortLabel;
+          const tooltip =
+            isSourceOpt && hasSource
+              ? `ตามไฟล์ต้นฉบับ (${sourceSize!.width}×${sourceSize!.height} • ${sourceRatioText})`
+              : opt.labelTh;
+
           return (
             <button
               key={opt.id}
               type="button"
-              title={opt.labelTh}
+              title={tooltip}
               onClick={() => onChangeAspectRatio(opt.id)}
-              className={`flex items-center gap-1 px-2 lg:px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 select-none transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2 xl:px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 select-none transition-all cursor-pointer ${
                 active
                   ? 'bg-slate-800 text-cyan-300 shadow-sm border border-cyan-500/35'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 border border-transparent'
               }`}
             >
               {getRatioIcon(opt.id)}
-              <span className="font-mono">{opt.shortLabel}</span>
+              <span className={isSourceOpt ? '' : 'font-mono'}>{pillText}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Mobile Ratio Dropdown + Export CTA */}
+      {/* Mobile / Compact Ratio Dropdown + Export CTA */}
       <div className="flex items-center gap-2 shrink-0">
         <select
           aria-label="เลือกสัดส่วนวิดีโอ"
           value={aspectRatio}
           onChange={(e) => onChangeAspectRatio(e.target.value as AspectRatioId)}
-          className="md:hidden bg-[#0B0D12] border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-200 outline-none"
+          className="lg:hidden bg-[#0B0D12] border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-200 outline-none"
         >
           {ASPECT_RATIO_OPTIONS.map((opt) => (
             <option key={opt.id} value={opt.id}>
-              {opt.labelTh}
+              {opt.id === 'source' && sourceRatioText
+                ? `ตามไฟล์ (${sourceRatioText})`
+                : opt.labelTh}
             </option>
           ))}
         </select>

@@ -12,6 +12,7 @@ import type {
 
 interface ExportTabProps {
   aspectRatio: AspectRatioId;
+  sourceSize: { width: number; height: number } | null;
   settings: ExportSettings;
   duration: number;
   canExport: boolean;
@@ -23,6 +24,7 @@ interface ExportTabProps {
 
 export const ExportTab: React.FC<ExportTabProps> = ({
   aspectRatio,
+  sourceSize,
   settings,
   duration,
   canExport,
@@ -31,8 +33,11 @@ export const ExportTab: React.FC<ExportTabProps> = ({
   onChange,
   onStartExport,
 }) => {
-  const { width, height } = getOutputDimensions(aspectRatio, settings.resolution);
+  const hasSource = Boolean(sourceSize && sourceSize.width > 0 && sourceSize.height > 0);
+  const { width, height } = getOutputDimensions(aspectRatio, settings.resolution, sourceSize);
   const totalFrames = duration > 0 ? Math.ceil(duration * settings.fps) : 0;
+  const resolutionChoices: ResolutionTier[] =
+    aspectRatio === 'source' && hasSource ? ['native', '1080p', '720p'] : ['1080p', '720p'];
 
   return (
     <div className="space-y-4">
@@ -47,19 +52,27 @@ export const ExportTab: React.FC<ExportTabProps> = ({
       <div className="rounded-xl bg-[#141926] border border-slate-800/80 p-3.5 space-y-3.5">
         <div className="space-y-1.5">
           <div className="text-xs font-medium text-slate-300">ความละเอียดวิดีโอ</div>
-          <div className="grid grid-cols-2 gap-2">
-            {(['1080p', '720p'] as ResolutionTier[]).map((res) => (
+          <div
+            className={`grid gap-2 ${
+              resolutionChoices.length === 3 ? 'grid-cols-3' : 'grid-cols-2'
+            }`}
+          >
+            {resolutionChoices.map((res) => (
               <button
                 key={res}
                 type="button"
                 onClick={() => onChange({ ...settings, resolution: res })}
-                className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                className={`py-2 px-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                   settings.resolution === res
                     ? 'bg-cyan-500/20 text-cyan-200 border-cyan-400'
                     : 'bg-[#0E121B] text-slate-400 border-slate-800 hover:text-slate-200'
                 }`}
               >
-                {res === '1080p' ? '1080p (Full HD)' : '720p (HD)'}
+                {res === 'native'
+                  ? 'ต้นฉบับ'
+                  : res === '1080p'
+                    ? '1080p'
+                    : '720p'}
               </button>
             ))}
           </div>

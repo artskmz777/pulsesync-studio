@@ -1,5 +1,5 @@
-export type AspectRatioId = '16:9' | '3:2' | '1:1' | '4:5' | '2:3' | '9:16';
-export type ResolutionTier = '1080p' | '720p';
+export type AspectRatioId = 'source' | '16:9' | '3:2' | '1:1' | '4:5' | '2:3' | '9:16';
+export type ResolutionTier = 'native' | '1080p' | '720p';
 export type FrameRateOption = 30 | 60;
 export type BitrateQuality = 'high' | 'standard';
 

@@ -313,27 +313,35 @@ export async function exportStudioMp4(options: ExportRunOptions): Promise<Export
   throwIfAborted(signal);
   const startMs = performance.now();
 
-  const { width, height } = getOutputDimensions(aspectRatio, exportSettings.resolution);
+  const sourceSize =
+    media.backgroundWidth > 0 && media.backgroundHeight > 0
+      ? { width: media.backgroundWidth, height: media.backgroundHeight }
+      : null;
+  const { width, height } = getOutputDimensions(
+    aspectRatio,
+    exportSettings.resolution,
+    sourceSize,
+  );
   const fps = exportSettings.fps;
   const duration = Math.max(0.1, analysis.raw.duration);
   const totalFrames = analysis.raw.totalFrames;
 
-  const videoBitrate =
-    exportSettings.resolution === '1080p'
-      ? exportSettings.bitrateQuality === 'high'
-        ? fps === 60
-          ? 14_000_000
-          : 10_000_000
-        : fps === 60
-          ? 8_000_000
-          : 6_000_000
-      : exportSettings.bitrateQuality === 'high'
-        ? fps === 60
-          ? 8_500_000
-          : 6_000_000
-        : fps === 60
-          ? 5_000_000
-          : 3_500_000;
+  const isHdTier = Math.max(width, height) > 1280 || Math.min(width, height) >= 900;
+  const videoBitrate = isHdTier
+    ? exportSettings.bitrateQuality === 'high'
+      ? fps === 60
+        ? 14_000_000
+        : 10_000_000
+      : fps === 60
+        ? 8_000_000
+        : 6_000_000
+    : exportSettings.bitrateQuality === 'high'
+      ? fps === 60
+        ? 8_500_000
+        : 6_000_000
+      : fps === 60
+        ? 5_000_000
+        : 3_500_000;
 
   const audioBitrate = exportSettings.bitrateQuality === 'high' ? 192_000 : 128_000;
 

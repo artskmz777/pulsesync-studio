@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Pause, Play, Volume2, VolumeX } from 'lucide-react';
-import { getAspectRatioOption, getOutputDimensions } from '../constants/presets';
+import {
+  formatSimplifiedRatio,
+  getAspectRatioOption,
+  getOutputDimensions,
+} from '../constants/presets';
 import { VISUALIZER_STYLES } from '../constants/visualizers';
 import { getGradientById } from '../constants/gradients';
 import type {
@@ -14,6 +18,7 @@ import type {
 interface PreviewStageProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   aspectRatio: AspectRatioId;
+  sourceSize: { width: number; height: number } | null;
   exportSettings: ExportSettings;
   visualizer: VisualizerSettings;
   gradient: GradientSettings;
@@ -40,6 +45,7 @@ function formatTimecode(sec: number): string {
 export const PreviewStage: React.FC<PreviewStageProps> = ({
   canvasRef,
   aspectRatio,
+  sourceSize,
   exportSettings,
   visualizer,
   gradient,
@@ -61,8 +67,16 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
     height: 0,
   });
 
-  const { width, height } = getOutputDimensions(aspectRatio, exportSettings.resolution);
+  const { width, height } = getOutputDimensions(
+    aspectRatio,
+    exportSettings.resolution,
+    sourceSize,
+  );
   const ratioMeta = getAspectRatioOption(aspectRatio);
+  const ratioChipText =
+    aspectRatio === 'source' && sourceSize && sourceSize.width > 0 && sourceSize.height > 0
+      ? `ตามไฟล์ (${formatSimplifiedRatio(sourceSize.width, sourceSize.height)})`
+      : ratioMeta.labelTh;
   const activeStyle = VISUALIZER_STYLES.find((s) => s.id === visualizer.styleId);
   const activePalette = getGradientById(gradient.gradientId);
 
@@ -141,7 +155,7 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
               {width} × {height} • {exportSettings.fps} FPS
             </span>
             <span className="hidden sm:inline-flex rounded-lg bg-[#131722] border border-slate-800 px-2 py-1 text-slate-300 whitespace-nowrap shrink-0">
-              {ratioMeta.labelTh}
+              {ratioChipText}
             </span>
             {activeStyle && (
               <span className="hidden xl:inline-flex items-center gap-1.5 rounded-lg bg-[#131722] border border-slate-800 px-2.5 py-1 text-slate-300 truncate">

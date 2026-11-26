@@ -16,6 +16,7 @@ import { VISUALIZER_STYLES } from '../src/constants/visualizers.ts';
 import {
   ASPECT_RATIO_OPTIONS,
   DEFAULT_BASS_SETTINGS,
+  formatSimplifiedRatio,
   getOutputDimensions,
 } from '../src/constants/presets.ts';
 import type { RawSpectrumData } from '../src/types/studio.ts';
@@ -151,13 +152,14 @@ test('Catalog completeness: exactly 15 non-circular visualizers and 20 tri-color
   }
 });
 
-test('Aspect ratios include 16:9, 3:2, 1:1, 4:5, 2:3, 9:16 with valid even export dimensions', () => {
-  const expectedIds = ['16:9', '3:2', '1:1', '4:5', '2:3', '9:16'];
+test('Aspect ratios include source, 16:9, 3:2, 1:1, 4:5, 2:3, 9:16 with valid even export dimensions', () => {
+  const expectedIds = ['source', '16:9', '3:2', '1:1', '4:5', '2:3', '9:16'];
   assert.deepEqual(
     ASPECT_RATIO_OPTIONS.map((o) => o.id),
     expectedIds,
   );
   for (const opt of ASPECT_RATIO_OPTIONS) {
+    if (opt.id === 'source') continue;
     const [rw, rh] = opt.id.split(':').map(Number);
     for (const tier of ['1080p', '720p'] as const) {
       const { width, height } = getOutputDimensions(opt.id, tier);
@@ -169,4 +171,21 @@ test('Aspect ratios include 16:9, 3:2, 1:1, 4:5, 2:3, 9:16 with valid even expor
       );
     }
   }
+
+  // Verify dynamic 'source' aspect ratio matching across custom image/video sizes
+  assert.deepEqual(getOutputDimensions('source', 'native', { width: 720, height: 720 }), {
+    width: 720,
+    height: 720,
+  });
+  assert.deepEqual(getOutputDimensions('source', '1080p', { width: 1280, height: 960 }), {
+    width: 1440,
+    height: 1080,
+  });
+  assert.deepEqual(getOutputDimensions('source', '720p', { width: 1080, height: 1920 }), {
+    width: 720,
+    height: 1280,
+  });
+  assert.equal(formatSimplifiedRatio(1080, 1080), '1:1');
+  assert.equal(formatSimplifiedRatio(1280, 960), '4:3');
+  assert.equal(formatSimplifiedRatio(1080, 1350), '4:5');
 });

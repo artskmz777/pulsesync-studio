@@ -177,8 +177,10 @@ export function renderStudioFrame(params: RenderFrameParams): void {
 
   const bassLevel = bass.enabled ? frameInfo.bass : 0;
   const bassZoomRatio = bass.enabled ? (bass.intensity / 100) * 0.12 * bassLevel : 0;
+  const autoShakeBleed = bass.enabled ? (bass.microShake / 100) * 0.045 : 0;
+  const effectiveBleedRatio = Math.max(bleedPercent / 100, autoShakeBleed);
   const maxShakePx = Math.min(width, height) * 0.022;
-  const bleedSafeMax = (bleedPercent / 100) * 0.42 * Math.min(width, height);
+  const bleedSafeMax = effectiveBleedRatio * 0.48 * Math.min(width, height);
   const shakeMagnitude = bass.enabled
     ? Math.min(bleedSafeMax, (bass.microShake / 100) * maxShakePx)
     : 0;
@@ -186,17 +188,17 @@ export function renderStudioFrame(params: RenderFrameParams): void {
   const offsetY = frameInfo.shakeY * shakeMagnitude;
   const bassGlowAmount = bass.enabled ? (bass.bassGlow / 100) * bassLevel : 0;
 
-  // 3. Draw Background Image or Video Frame with Bleed Margin + Bass Zoom/Shake
+  // 3. Draw Background Image or Video Frame with smart Bleed Margin + Bass Zoom/Shake
   if (background.kind === 'none') {
     drawPlaceholderBackdrop(ctx, width, height, palette, bassZoomRatio);
   } else if (background.width > 0 && background.height > 0) {
     const srcW = background.width;
     const srcH = background.height;
-    const isCover = background.kind !== 'image' || imageFit === 'cover';
+    const isCover = imageFit === 'cover';
     const baseScale = isCover
       ? Math.max(width / srcW, height / srcH)
       : Math.min(width / srcW, height / srcH);
-    const bleedScale = isCover ? 1 + bleedPercent / 100 : 1;
+    const bleedScale = isCover ? 1 + effectiveBleedRatio : 1;
     const totalScale = baseScale * bleedScale * (1 + bassZoomRatio);
 
     const drawW = srcW * totalScale;
@@ -204,9 +206,9 @@ export function renderStudioFrame(params: RenderFrameParams): void {
     const drawX = (width - drawW) * 0.5 + offsetX;
     const drawY = (height - drawH) * 0.5 + offsetY;
 
-    // In Contain mode, draw a subtle ambient blurred fill behind the contained frame
+    // In Contain mode, draw a subtle ambient darkened fill behind the contained frame
     if (!isCover) {
-      const fillScale = Math.max(width / srcW, height / srcH) * (1 + bleedPercent / 100);
+      const fillScale = Math.max(width / srcW, height / srcH) * (1 + effectiveBleedRatio);
       const fw = srcW * fillScale;
       const fh = srcH * fillScale;
       ctx.save();
