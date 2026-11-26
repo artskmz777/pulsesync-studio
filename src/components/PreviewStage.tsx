@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pause, Play, Volume2, VolumeX } from 'lucide-react';
-import { getOutputDimensions } from '../constants/presets';
+import { getAspectRatioOption, getOutputDimensions } from '../constants/presets';
 import { VISUALIZER_STYLES } from '../constants/visualizers';
 import { getGradientById } from '../constants/gradients';
 import type {
@@ -55,9 +55,51 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
   onToggleMute,
 }) => {
   const timelineCanvasRef = useRef<HTMLCanvasElement>(null);
+  const stageSlotRef = useRef<HTMLDivElement>(null);
+  const [slotSize, setSlotSize] = useState<{ width: number; height: number }>({
+    width: 0,
+    height: 0,
+  });
+
   const { width, height } = getOutputDimensions(aspectRatio, exportSettings.resolution);
+  const ratioMeta = getAspectRatioOption(aspectRatio);
   const activeStyle = VISUALIZER_STYLES.find((s) => s.id === visualizer.styleId);
   const activePalette = getGradientById(gradient.gradientId);
+
+  // Measure available preview stage box so ANY aspect ratio (16:9, 3:2, 1:1, 4:5, 2:3, 9:16)
+  // fits cleanly without clipping or overflowing width/height.
+  useEffect(() => {
+    const el = stageSlotRef.current;
+    if (!el) return;
+
+    const updateSize = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setSlotSize({ width: rect.width, height: rect.height });
+      }
+    };
+
+    updateSize();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const fittedFrameStyle = (() => {
+    if (slotSize.width <= 0 || slotSize.height <= 0) {
+      return {
+        aspectRatio: `${width} / ${height}`,
+        maxWidth: '100%',
+        maxHeight: '100%',
+      };
+    }
+    const scale = Math.min(slotSize.width / width, slotSize.height / height);
+    return {
+      width: `${Math.max(80, Math.floor(width * scale))}px`,
+      height: `${Math.max(80, Math.floor(height * scale))}px`,
+    };
+  })();
 
   // Draw beat energy markers behind the timeline scrubber
   useEffect(() => {
@@ -89,57 +131,57 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
   const progressPct = duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0;
 
   return (
-    <main className="flex-1 min-w-0 bg-[#0B0D12] flex flex-col justify-between overflow-hidden">
+    <main className="flex-1 min-w-0 min-h-[380px] lg:min-h-0 bg-[#0B0D12] flex flex-col justify-between overflow-hidden">
       {/* Stage Canvas Area */}
-      <div className="flex-1 min-h-0 p-4 sm:p-6 flex flex-col items-center justify-center relative">
+      <div className="flex-1 min-h-0 p-3 sm:p-4 lg:p-5 flex flex-col items-center justify-center relative gap-2.5">
         {/* Top Stage Info Chips */}
-        <div className="w-full max-w-4xl flex flex-wrap items-center justify-between gap-2 mb-3 text-[11px]">
-          <div className="flex items-center gap-2">
-            <span className="rounded-lg bg-[#131722] border border-slate-800 px-2.5 py-1 font-mono text-slate-300">
+        <div className="w-full max-w-4xl flex items-center justify-between gap-2 text-[11px] shrink-0">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="rounded-lg bg-[#131722] border border-slate-800 px-2.5 py-1 font-mono text-slate-300 whitespace-nowrap shrink-0">
               {width} × {height} • {exportSettings.fps} FPS
             </span>
+            <span className="hidden sm:inline-flex rounded-lg bg-[#131722] border border-slate-800 px-2 py-1 text-slate-300 whitespace-nowrap shrink-0">
+              {ratioMeta.labelTh}
+            </span>
             {activeStyle && (
-              <span className="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-[#131722] border border-slate-800 px-2.5 py-1 text-slate-300">
+              <span className="hidden xl:inline-flex items-center gap-1.5 rounded-lg bg-[#131722] border border-slate-800 px-2.5 py-1 text-slate-300 truncate">
                 <span
-                  className="w-2.5 h-2.5 rounded-sm"
+                  className="w-2.5 h-2.5 rounded-sm shrink-0"
                   style={{
                     background: `linear-gradient(90deg, ${activePalette.colors[0]}, ${activePalette.colors[1]}, ${activePalette.colors[2]})`,
                   }}
                 />
-                {activeStyle.nameTh}
+                <span className="truncate">{activeStyle.nameTh}</span>
               </span>
             )}
           </div>
-          <span className="text-slate-500 hidden md:inline">
-            กรอบพรีวิวจำลองสัดส่วนภาพส่งออกจริง 100%
+          <span className="text-slate-500 hidden 2xl:inline whitespace-nowrap shrink-0">
+            สัดส่วนพรีวิวตรงกับไฟล์ส่งออก 100%
           </span>
         </div>
 
         {/* Aspect-Locked Frame Container */}
-        <div className="flex-1 min-h-0 w-full flex items-center justify-center">
+        <div
+          ref={stageSlotRef}
+          className="flex-1 min-h-0 w-full flex items-center justify-center overflow-hidden"
+        >
           <div
-            className="relative max-h-full max-w-full rounded-xl overflow-hidden border border-slate-700/70 shadow-2xl shadow-black/70 bg-[#07090E]"
-            style={{
-              aspectRatio: `${width} / ${height}`,
-              height: aspectRatio === '9:16' ? '100%' : 'auto',
-              width: aspectRatio === '16:9' ? '100%' : 'auto',
-              maxHeight: '100%',
-              maxWidth: '100%',
-            }}
+            className="relative rounded-xl overflow-hidden border border-slate-700/70 shadow-2xl shadow-black/70 bg-[#07090E] shrink-0"
+            style={fittedFrameStyle}
           >
             <canvas
               ref={canvasRef}
-              className="w-full h-full block object-contain"
+              className="w-full h-full block"
             />
           </div>
         </div>
       </div>
 
       {/* Bottom Transport Bar */}
-      <div className="shrink-0 border-t border-slate-800/90 bg-[#10141F]/95 px-4 py-3">
-        <div className="max-w-4xl mx-auto flex flex-col gap-2.5">
+      <div className="shrink-0 border-t border-slate-800/90 bg-[#10141F]/95 px-3 sm:px-4 py-2.5 sm:py-3">
+        <div className="max-w-4xl mx-auto flex flex-col gap-2">
           {/* Interactive Scrubber with Bass Beat Markers */}
-          <div className="relative h-8 flex items-center group">
+          <div className="relative h-7 flex items-center group">
             <canvas
               ref={timelineCanvasRef}
               width={720}
@@ -165,41 +207,41 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
           </div>
 
           {/* Controls Row */}
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <button
                 type="button"
                 onClick={onTogglePlay}
                 disabled={duration <= 0}
-                className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold text-xs px-4 py-2 whitespace-nowrap shrink-0 select-none transition-all cursor-pointer disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold text-xs px-3 sm:px-4 py-2 whitespace-nowrap shrink-0 select-none transition-all cursor-pointer disabled:cursor-not-allowed"
               >
                 {isPlaying ? (
                   <>
-                    <Pause className="w-4 h-4 fill-current" />
+                    <Pause className="w-4 h-4 fill-current shrink-0" />
                     <span>หยุดชั่วคราว</span>
                   </>
                 ) : (
                   <>
-                    <Play className="w-4 h-4 fill-current" />
+                    <Play className="w-4 h-4 fill-current shrink-0" />
                     <span>เล่นพรีวิว</span>
                   </>
                 )}
               </button>
 
-              <div className="font-mono text-xs text-slate-300 tabular-nums">
+              <div className="font-mono text-[11px] sm:text-xs text-slate-300 tabular-nums whitespace-nowrap">
                 <span className="text-white font-semibold">{formatTimecode(currentTime)}</span>
-                <span className="text-slate-600 mx-1.5">/</span>
+                <span className="text-slate-600 mx-1">/</span>
                 <span className="text-slate-400">{formatTimecode(duration)}</span>
               </div>
             </div>
 
             {/* Volume */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <button
                 type="button"
                 onClick={onToggleMute}
                 aria-label={isMuted ? 'เปิดเสียงพรีวิว' : 'ปิดเสียงพรีวิว'}
-                className="p-1.5 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
               >
                 {isMuted || volume === 0 ? (
                   <VolumeX className="w-4 h-4 text-slate-400" />
@@ -210,7 +252,7 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
               <input
                 type="range"
                 aria-label="ระดับเสียงพรีวิว"
-                className="studio-slider w-20 sm:w-28"
+                className="studio-slider w-16 sm:w-20 xl:w-24"
                 min={0}
                 max={100}
                 value={isMuted ? 0 : volume}

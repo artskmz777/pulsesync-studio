@@ -114,7 +114,7 @@ export const MediaPanel: React.FC<MediaPanelProps> = ({
     media.audioSourceMode === 'video';
 
   return (
-    <aside className="w-full lg:w-[300px] xl:w-[320px] shrink-0 bg-[#10141F] border-r border-slate-800/90 flex flex-col overflow-y-auto">
+    <aside className="w-full lg:w-[258px] xl:w-[292px] 2xl:w-[320px] shrink-0 bg-[#10141F] border-r border-slate-800/90 flex flex-col overflow-y-auto">
       <div className="p-4 space-y-4">
         {/* Quick Demo Launcher */}
         <button

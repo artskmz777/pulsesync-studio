@@ -59,7 +59,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   onStartExport,
 }) => {
   return (
-    <aside className="w-full lg:w-[340px] xl:w-[365px] shrink-0 bg-[#10141F] border-l border-slate-800/90 flex flex-col overflow-hidden">
+    <aside className="w-full lg:w-[292px] xl:w-[332px] 2xl:w-[365px] shrink-0 bg-[#10141F] border-l border-slate-800/90 flex flex-col overflow-hidden">
       {/* 4 Tab Switcher */}
       <nav
         aria-label="แผงปรับแต่งสตูดิโอ"

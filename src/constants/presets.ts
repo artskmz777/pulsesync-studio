@@ -26,12 +26,12 @@ export const ASPECT_RATIO_OPTIONS: readonly AspectRatioOption[] = [
     },
   },
   {
-    id: '9:16',
-    labelTh: 'แนวตั้ง 9:16 (TikTok/Reels)',
-    shortLabel: '9:16',
+    id: '3:2',
+    labelTh: 'แนวนอน 3:2 (ภาพถ่าย)',
+    shortLabel: '3:2',
     dimensions: {
-      '1080p': { width: 1080, height: 1920 },
-      '720p': { width: 720, height: 1280 },
+      '1080p': { width: 1620, height: 1080 },
+      '720p': { width: 1080, height: 720 },
     },
   },
   {
@@ -43,7 +43,38 @@ export const ASPECT_RATIO_OPTIONS: readonly AspectRatioOption[] = [
       '720p': { width: 720, height: 720 },
     },
   },
+  {
+    id: '4:5',
+    labelTh: 'แนวตั้ง 4:5 (IG/FB)',
+    shortLabel: '4:5',
+    dimensions: {
+      '1080p': { width: 1080, height: 1350 },
+      '720p': { width: 720, height: 900 },
+    },
+  },
+  {
+    id: '2:3',
+    labelTh: 'แนวตั้ง 2:3 (โปสเตอร์)',
+    shortLabel: '2:3',
+    dimensions: {
+      '1080p': { width: 1080, height: 1620 },
+      '720p': { width: 720, height: 1080 },
+    },
+  },
+  {
+    id: '9:16',
+    labelTh: 'แนวตั้ง 9:16 (TikTok/Reels)',
+    shortLabel: '9:16',
+    dimensions: {
+      '1080p': { width: 1080, height: 1920 },
+      '720p': { width: 720, height: 1280 },
+    },
+  },
 ];
+
+export function getAspectRatioOption(aspectRatio: AspectRatioId): AspectRatioOption {
+  return ASPECT_RATIO_OPTIONS.find((item) => item.id === aspectRatio) ?? ASPECT_RATIO_OPTIONS[0];
+}
 
 export function getOutputDimensions(
   aspectRatio: AspectRatioId,

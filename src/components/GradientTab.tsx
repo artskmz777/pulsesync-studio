@@ -83,7 +83,7 @@ export const GradientTab: React.FC<GradientTabProps> = ({ settings, onChange }) 
                   </div>
                   <div className="text-[10px] text-slate-500 shrink-0">{grad.nameEn}</div>
                 </div>
-                <div className="flex items-center gap-1.5 font-mono text-[10px] text-slate-400">
+                <div className="flex flex-wrap items-center gap-1.5 font-mono text-[10px] text-slate-400">
                   {grad.colors.map((hex) => (
                     <span
                       key={hex}

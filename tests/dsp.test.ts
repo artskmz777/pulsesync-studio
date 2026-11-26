@@ -13,7 +13,11 @@ import {
 import { computeFrameAnalysis } from '../src/dsp/envelope.ts';
 import { TRI_COLOR_GRADIENTS } from '../src/constants/gradients.ts';
 import { VISUALIZER_STYLES } from '../src/constants/visualizers.ts';
-import { DEFAULT_BASS_SETTINGS } from '../src/constants/presets.ts';
+import {
+  ASPECT_RATIO_OPTIONS,
+  DEFAULT_BASS_SETTINGS,
+  getOutputDimensions,
+} from '../src/constants/presets.ts';
 import type { RawSpectrumData } from '../src/types/studio.ts';
 
 function synthSine(freqHz: number, sampleRate: number, durationSec: number, amp = 0.8): Float32Array {
@@ -143,6 +147,26 @@ test('Catalog completeness: exactly 15 non-circular visualizers and 20 tri-color
     assert.equal(g.colors.length, 3);
     for (const hex of g.colors) {
       assert.match(hex, /^#[0-9A-F]{6}$/);
+    }
+  }
+});
+
+test('Aspect ratios include 16:9, 3:2, 1:1, 4:5, 2:3, 9:16 with valid even export dimensions', () => {
+  const expectedIds = ['16:9', '3:2', '1:1', '4:5', '2:3', '9:16'];
+  assert.deepEqual(
+    ASPECT_RATIO_OPTIONS.map((o) => o.id),
+    expectedIds,
+  );
+  for (const opt of ASPECT_RATIO_OPTIONS) {
+    const [rw, rh] = opt.id.split(':').map(Number);
+    for (const tier of ['1080p', '720p'] as const) {
+      const { width, height } = getOutputDimensions(opt.id, tier);
+      assert.equal(width % 2, 0, `${opt.id} ${tier} width must be even`);
+      assert.equal(height % 2, 0, `${opt.id} ${tier} height must be even`);
+      assert.ok(
+        Math.abs(width / height - rw! / rh!) < 1e-6,
+        `${opt.id} ${tier} ratio mismatch: ${width}x${height}`,
+      );
     }
   }
 });
